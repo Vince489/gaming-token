@@ -48,10 +48,10 @@ router.get('/', async (req, res) => {
 router.post('/register', async (req, res) => {
   try {
     // Extract user data from request body
-    const { userName, email, password } = req.body;
+    const { userName, password } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ userName });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -62,7 +62,6 @@ router.post('/register', async (req, res) => {
     // Create new user
     const newUser = new User({
       userName,
-      email,
       password: hashedPassword
     });
 
