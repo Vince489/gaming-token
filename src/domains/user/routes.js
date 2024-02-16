@@ -20,7 +20,7 @@ const zenniesToTokens = (zennies) => {
 
 // Set up express-session middleware
 router.use(session({
-  name: 'zprompter',
+  name: 'platform',
   secret: process.env.SESSION_SECRET, 
   resave: false,
   saveUninitialized: false,
@@ -32,8 +32,8 @@ router.use(session({
 // Get all users endpoint
 router.get('/', async (req, res) => {
   try {
-    // Fetch all users from the database
-    const users = await User.find();
+    // Fetch all users from the database, excluding password and airdropReceived
+    const users = await User.find({}, { password: 0, airdropReceived: 0, transactions: 0});
 
     // Respond with the users
     res.status(200).json(users);
@@ -43,6 +43,7 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 // Signup endpoint
 router.post('/register', async (req, res) => {
@@ -67,9 +68,6 @@ router.post('/register', async (req, res) => {
 
     // Save the user to the database
     await newUser.save();
-
-    // Set session data (optional)
-    req.session.userId = newUser._id;
 
     // Respond with success message
     res.status(201).json({ message: 'User created successfully' });
@@ -169,7 +167,7 @@ router.post('/airdrop', async (req, res) => {
     }
 
     // Update user's balance
-    user.balance += 100;
+    user.balance += tokensToZennies(100);
 
     // Update user's received field to true
     user.airdropReceived = true;
@@ -178,7 +176,7 @@ router.post('/airdrop', async (req, res) => {
     const transaction = new Transaction({
       sender: null, // Airdrop doesn't have a sender
       recipient: user._id,
-      amount: 100, // Airdrop amount
+      amount: tokensToZennies(100), // Airdrop amount
       type: 'airdrop'
     });
 
@@ -199,82 +197,6 @@ router.post('/airdrop', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
-
-// // Transfer funds endpoint
-// router.post('/transfer', async (req, res) => {
-//   try {
-//     // Check if user is logged in
-//     if (!req.session.userId) {
-//       return res.status(401).json({ message: 'User not logged in' });
-//     }
-
-//     // Extract transfer data from request body
-//     const { to, amount } = req.body;
-
-//     // Fetch sender from the database
-//     const sender = await User.findById(req.session.userId);
-
-//     // Fetch receiver from the database
-//     const receiver = await User.findById(to);
-
-//     // Check if receiver exists
-//     if (!receiver) {
-//       return res.status(404).json({ message: 'Receiver not found' });
-//     }
-
-//     // Convert amount to zennies
-//     const zennies = tokensToZennies(amount);
-
-
-//     // Check if sender is the receiver
-//     if (sender._id.toString() === receiver._id.toString()) {
-//       return res.status(400).json({ message: 'Cannot transfer to self' });
-//     }
-
-//     // Check if amount is positive
-//     if (zennies <= 0) {
-//       return res.status(400).json({ message: 'Invalid amount' });
-//     }
-
-//     // Check if sender has enough balance
-//     if (sender.balance < zennies) {
-//       return res.status(400).json({ message: 'Insufficient balance' });
-//     }
-
-//     // Create transaction
-//     const transaction = new Transaction({
-//       sender: sender._id,
-//       recipient: receiver._id, // Specify the recipient here
-//       amount: zenniesToTokens(zennies), // Convert zennies to tokens
-//     });
-
-//     // Save the transaction to the database
-//     await transaction.save();
-
-//     // Add transaction to sender's transactions
-//     sender.transactions.push(transaction);
-
-//     // Add transaction to receiver's transactions
-//     receiver.transactions.push(transaction);
-
-//     // Update sender's balance
-//     sender.balance -= zennies;
-
-//     // Update receiver's balance
-//     receiver.balance += zennies;
-
-//     // Save the updated users to the database
-//     await sender.save();
-//     await receiver.save();
-
-//     // Respond with success message
-//     res.status(200).json({ message: 'Funds transferred successfully', senderBalance: zenniesToTokens(sender.balance).toFixed(2) });
-//   } catch (error) {
-//     // Handle errors
-//     console.error(error);
-//     res.status(500).json({ message: 'Internal server error' });
-//   }
-// });
 
 router.post('/transfer', async (req, res) => {
   try {
@@ -406,6 +328,41 @@ router.get('/:id/balance', async (req, res) => {
   } catch (error) {
     // Handle errors
     console.error('Error in balance endpoint:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Endpoint to get user by id with transactions populated 
+router.get('/:id', async (req, res) => {
+  try {
+    // Fetch user from the database and populate transactions with actual data
+    const user = await User.findById(req.params.id).populate('transactions');
+
+    // Respond with the user
+    res.status(200).json(user);
+  } catch (error) {
+    // Handle errors
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.get('/transactions/:id', async (req, res) => {
+  try {
+    // Fetch user from the database
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Fetch all transactions associated with the user
+    const transactions = await Transaction.find({ _id: { $in: user.transactions } });
+
+    // Respond with the transactions
+    res.status(200).json(transactions);
+  } catch (error) {
+    // Handle errors
+    console.error('Error in transaction endpoint:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
