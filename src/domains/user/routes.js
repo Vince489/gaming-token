@@ -6,7 +6,8 @@ const bcrypt = require('bcrypt');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const User = require('./model');
-const Transaction = require('../transaction/model');  
+const Transaction = require('../transaction/model'); 
+const generateUsername = require('../../utils/names'); 
 
 // Convert Tokens to zennies 1 token = 100 zennies
 const tokensToZennies = (tokens) => {
@@ -44,12 +45,34 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get user by ID endpoint
+router.get('/2', async (req, res) => {
+  const { userId } = req.session;
+  if (!userId) {
+    return res.status(401).json({ message: 'User not logged in' });
+  }
+  try {
+    // Fetch user from the database
+    const user = await User.findById(userId);
+
+    // Respond with the user
+    res.status(200).json(user);
+  } catch (error) {
+    // Handle errors
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 
 // Signup endpoint
 router.post('/register', async (req, res) => {
   try {
     // Extract user data from request body
     const { userName, password } = req.body;
+
+    // Generate unique codeName
+    const codeName = await generateUsername(); 
 
     // Check if user already exists
     const existingUser = await User.findOne({ userName });
@@ -63,14 +86,19 @@ router.post('/register', async (req, res) => {
     // Create new user
     const newUser = new User({
       userName,
+      codeName,
       password: hashedPassword
     });
 
     // Save the user to the database
     await newUser.save();
 
+
     // Respond with success message
-    res.status(201).json({ message: 'User created successfully' });
+    res.status(201).json({ 
+      message: 'User created successfully',
+      codeName: newUser.codeName,
+     });
   } catch (error) {
     // Handle errors
     console.error(error);
@@ -87,26 +115,34 @@ router.post('/login', async (req, res) => {
     // Check if user exists
     const user = await User.findOne({ userName });
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid username' });
     }
 
     // Compare passwords
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid password' });
     }
 
-    // Set session data (optional)
+    // Set session data 
     req.session.userId = user._id;
+    req.session.userName = user.userName; 
+    req.session.isLoggedIn = true;
+    req.session.sessionId = req.sessionID;
 
     // Authentication successful
-    res.status(200).json({ message: 'Login successful', userId: user._id });
+    res.status(200).json({ 
+      message: 'Login successful', 
+      userId: user._id, 
+      userName: user.userName,
+    });
   } catch (error) {
     // Handle errors
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 // Logout endpoint
 router.get('/logout', (req, res) => {
@@ -124,7 +160,7 @@ router.get('/logout', (req, res) => {
 // Check if user is logged in
 router.get('/check-session', (req, res) => {
   // Check if session data exists
-  if (req.session.userId) {
+  if (req.session.isLoggedIn) {
     return res.status(200).json({ message: 'User logged in' });
   }
 

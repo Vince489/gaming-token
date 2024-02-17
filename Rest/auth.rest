@@ -1,0 +1,16 @@
+
+// Get authState
+POST http://localhost:5550/api/v1/auth/saveAuthState
+Content-Type: application/json
+
+{
+  "userId": "45452",
+  "userName": "John Doe",
+  "isLoggedIn": true
+}
+
+###
+// Get authState
+GET http://localhost:5550/api/v1/auth/getAuthState
+```
+
