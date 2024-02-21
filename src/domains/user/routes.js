@@ -7,7 +7,9 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const User = require('./model');
 const Transaction = require('../transaction/model'); 
+const authenticateUser = require('../../utils/authUser');
 const generateUsername = require('../../utils/names'); 
+const AuthState = require('../authState/model');
 
 // Convert Tokens to zennies 1 token = 100 zennies
 const tokensToZennies = (tokens) => {
@@ -30,6 +32,25 @@ router.use(session({
   })
 }));
 
+// Get auth data
+router.get('/getAuthData', async (req, res) => {
+  try {
+    const userId = req.session.userId;
+
+    // Find the authentication state document for the specified user
+    const authState = await AuthState.findOne({ userId });
+
+    if (!authState) {
+      return res.status(200).json({});
+    }
+
+    res.status(200).json(authState);
+  } catch (error) {
+    console.error('Error getting auth state:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // Get all users endpoint
 router.get('/', async (req, res) => {
   try {
@@ -44,26 +65,6 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
-
-// Get user by ID endpoint
-router.get('/2', async (req, res) => {
-  const { userId } = req.session;
-  if (!userId) {
-    return res.status(401).json({ message: 'User not logged in' });
-  }
-  try {
-    // Fetch user from the database
-    const user = await User.findById(userId);
-
-    // Respond with the user
-    res.status(200).json(user);
-  } catch (error) {
-    // Handle errors
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
-
 
 // Signup endpoint
 router.post('/register', async (req, res) => {
@@ -126,16 +127,16 @@ router.post('/login', async (req, res) => {
 
     // Set session data 
     req.session.userId = user._id;
-    req.session.userName = user.userName; 
+    req.session.userName = user.userName;
     req.session.isLoggedIn = true;
-    req.session.sessionId = req.sessionID;
 
     // Authentication successful
     res.status(200).json({ 
-      message: 'Login successful', 
-      userId: user._id, 
-      userName: user.userName,
+      message: 'Login successful',
+      user: user, 
+      isLoggedIn: true,
     });
+    console.log()
   } catch (error) {
     // Handle errors
     console.error(error);
@@ -143,6 +144,26 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Get isLogged in status from session
+router.get('/isLoggedIn', (req, res) => {
+  // Retrieve the sessionId from the request headers or query parameters
+  const sessionId = req.headers['Sessionid']; // Use 'Sessionid' here
+
+  // Check if the sessionId is present
+  if (!sessionId) {
+    return res.status(400).json({ message: 'SessionId not found' });
+  }
+
+  // Check if the sessionId is valid
+  if (req.sessionID === sessionId) {
+    return res.status(200).json({ isLoggedIn: true });
+  }
+
+  // SessionId is invalid
+  res.status(401).json({ isLoggedIn: false });
+});
+
+// GET endpoint to retrieve the Pinia store state from MongoDB
 
 // Logout endpoint
 router.get('/logout', (req, res) => {
@@ -157,16 +178,64 @@ router.get('/logout', (req, res) => {
   });
 });
 
+// Initialize the Pinia store state from MongoDB using req.session.userId
+router.post('/initAuthState', async (req, res) => {
+  // Check if session data exists
+  if (!req.session.userId) {
+    return res.status(400).json({ message: 'Session data not found' });
+  }
+  try {
+    // Fetch the authentication state data from MongoDB
+    const authState = await AuthState.findOne({ userId: req.session.userId });
+
+    // If no authentication state is found, respond with an appropriate message
+    if (!authState) {
+      return res.status(404).json({ message: 'Authentication state not found' });
+    }
+
+    // If authentication state is found, respond with the state data
+    res.status(200).json(authState);
+  } catch (error) {
+    // Handle any errors that occur during the process
+    console.error('Error initializing auth state:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // Check if user is logged in
 router.get('/check-session', (req, res) => {
   // Check if session data exists
   if (req.session.isLoggedIn) {
-    return res.status(200).json({ message: 'User logged in' });
+    return res.status(200).json({ message: 'User: ' + req.session.userName });
   }
-
   // No session data
   res.status(401).json({ message: 'User not logged in' });
 });
+
+// GET endpoint to fetch user data
+router.get('/getUser', async (req, res) => {
+  if (req.session.isLoggedIn) {
+    try {
+      // Fetch user data based on session user ID
+      const user = await User.findById(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Populate the user's transactions
+      await user.populate('transactions')
+
+      // Return user data along with isLoggedIn property
+      res.status(200).json({ user, isLoggedIn: req.session.isLoggedIn });
+    } catch (error) {
+      console.error('Failed to fetch user:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  } else {
+    res.status(401).json({ message: 'User not logged in' });  
+  }
+});
+
 
 // Get user by ID endpoint
 router.get('/:id', async (req, res) => {
@@ -311,6 +380,29 @@ router.post('/transfer', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
+// Get user by userId from request body
+router.post('/getUser', async (req, res) => {
+  try {
+    // Extract user ID from request body
+    const { userId } = req.body;
+    console.log(userId);
+    // Fetch user from the database
+    const user = await User.findById(userId);
+
+    // Respond with the user
+    res.status(200).json(user);
+  } catch (error) {
+    // Handle errors
+    console.error('Error in getUser endpoint:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
+
+        
+
 
 // obtain transaction history by user id
 router.get('/:id/transactions', async (req, res) => {
