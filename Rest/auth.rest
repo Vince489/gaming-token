@@ -1,0 +1,33 @@
+
+// Get authState
+POST http://localhost:5550/api/v1/auth/saveAuthState
+Content-Type: application/json
+
+{
+  "userId": "45452",
+  "userName": "John Doe",
+  "isLoggedIn": true
+}
+
+###
+// Get authState
+GET http://localhost:5550/api/v1/auth/getAuthState/65d24cc50df4f8f19d6cc7d4
+
+
+###
+// Get authState
+GET http://localhost:5550/api/v1/auth/isLoggedIn/65d24cc50df4f8f19d6cc7d4
+```
+
+
+###
+// Get authState
+GET http://localhost:5550/api/v1/user/getAuthData
+
+###
+// Initialize authState
+POST http://localhost:5550/api/v1/user/initAuthState
+Content-Type: application/json
+
+
+
