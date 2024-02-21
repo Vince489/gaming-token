@@ -5,8 +5,6 @@ const authStateSchema = new mongoose.Schema({
   userId: String,
   userName: String,
   isLoggedIn: Boolean,
-  sessionId: String,
-  codeName: String,
 });
 
 // Create a model using the schema
