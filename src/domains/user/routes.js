@@ -393,7 +393,7 @@ router.get('/getUser', async (req, res) => {
       }
 
       // Populate the user's transactions
-      await user.populate('transactions').execPopulate();
+      await user.populate('transactions');
 
       // Return user data with populated transactions
       res.status(200).json({ user });
