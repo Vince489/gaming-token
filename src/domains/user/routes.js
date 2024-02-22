@@ -382,22 +382,30 @@ router.post('/transfer', async (req, res) => {
 });
 
 // Get user by userId from request body
-router.post('/getUser', async (req, res) => {
-  try {
-    // Extract user ID from request body
-    const { userId } = req.body;
-    console.log(userId);
-    // Fetch user from the database
-    const user = await User.findById(userId);
+router.get('/getUser', async (req, res) => {
+  if (req.session.isLoggedIn) {
+    try {
+      // Fetch user data based on session user ID
+      const user = await User.findById(req.session.userId);
 
-    // Respond with the user
-    res.status(200).json(user);
-  } catch (error) {
-    // Handle errors
-    console.error('Error in getUser endpoint:', error);
-    res.status(500).json({ message: 'Internal server error' });
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Populate the user's transactions
+      await user.populate('transactions').execPopulate();
+
+      // Return user data with populated transactions
+      res.status(200).json({ user });
+    } catch (error) {
+      console.error('Failed to fetch user:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  } else {
+    res.status(401).json({ message: 'User not logged in' });  
   }
 });
+
 
 
 
