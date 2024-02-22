@@ -7,7 +7,6 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const User = require('./model');
 const Transaction = require('../transaction/model'); 
-const authenticateUser = require('../../utils/authUser');
 const generateUsername = require('../../utils/names'); 
 const AuthState = require('../authState/model');
 
@@ -22,15 +21,21 @@ const zenniesToTokens = (zennies) => {
 };
 
 // Set up express-session middleware
-router.use(session({
+const sessionOptions = {
   name: 'platform',
-  secret: process.env.SESSION_SECRET, 
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI 
-  })
-}));
+    mongoUrl: process.env.MONGODB_URI
+  }),
+  cookie: {
+    maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+    secure: process.env.NODE_ENV === 'production' // set to true in production if using HTTPS
+  }
+};
+
+router.use(session(sessionOptions));
 
 // Get auth data
 router.get('/getAuthData', async (req, res) => {
