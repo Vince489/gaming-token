@@ -2,11 +2,22 @@
 GET https://gaming-token-production.up.railway.app/api/v1/user
 
 ###
-GET https://gaming-token-production.up.railway.app/api/v1/user/2
+// Get all users 2
+GET http://localhost:5550/api/v1/user
 
 ###
 // Register
 POST https://gaming-token-production.up.railway.app/api/v1/user/register
+Content-Type: application/json
+
+{
+    "userName": "wer", 
+    "password": "1234"
+}
+
+###
+// Register 2
+POST http://localhost:5550/api/v1/user/register
 Content-Type: application/json
 
 {
@@ -25,16 +36,39 @@ Content-Type: application/json
 }
 
 ###
+// Login 2
+POST http://localhost:5550/api/v1/user/login
+Content-Type: application/json
+
+{
+    "userName": "waq",
+    "password": "12345678"
+}
+
+###
 // Logout
 GET https://gaming-token-production.up.railway.app/api/v1/user/logout
+
+###
+// Logout 2
+GET http://localhost:5550/api/v1/user/logout
 
 ###
 // Check if user is logged in
 GET https://gaming-token-production.up.railway.app/api/v1/user/check-session
 
 ###
+// Check if user is logged in 2
+GET http://localhost:5550/api/v1/user/check-session
+
+###
 // Request an airdrop
 POST https://gaming-token-production.up.railway.app/api/v1/user/airdrop
+Content-Type: application/json
+
+###
+// Request an airdrop 2
+POST http://localhost:5550/api/v1/user/airdrop
 Content-Type: application/json
 
 ###
@@ -43,7 +77,17 @@ POST https://gaming-token-production.up.railway.app/api/v1/user/transfer
 Content-Type: application/json
 
 {
-    "to": "65d2e95223c29596a324a832",
+    "to": "65d69146a28defb6c0cf2543",
+    "amount": 4.25
+}
+
+###
+// Transfer tokens 2
+POST http://localhost:5550/api/v1/user/transfer
+Content-Type: application/json
+
+{
+    "to": "65d69146a28defb6c0cf2543",
     "amount": 4.25
 }
 
@@ -51,16 +95,25 @@ Content-Type: application/json
 // View balance by user id
 GET https://gaming-token-production.up.railway.app/api/v1/user/65d6950a04ddc6c2b1d76c9f/balance
 
-
+### 
+// View balance by user id 2
+GET http://localhost:5550.app/api/v1/user/65d6950a04ddc6c2b1d76c9f/balance
 
 ###
 // View user's transactions
 GET https://gaming-token-production.up.railway.app/api/v1/user/transactions/65d6950a04ddc6c2b1d76c9f
 
+###
+// View user's transactions 2
+GET http://localhost:5550/api/v1/user/transactions/65d6950a04ddc6c2b1d76c9f
 
 ###
 // Get user by session id
 GET https://gaming-token-production.up.railway.app/api/v1/user/getUser
+
+###
+// Get user by session id 2
+GET http://localhost:5550/api/v1/user/getUser
 
 
 
