@@ -9,7 +9,7 @@ const cors = require("cors");
 const app = express();
 
 const corsOptions = {
-  origin: ["http://localhost:3000", "https://zprompter.com"],
+  origin: ["http://localhost:3000", "https://zprompter.com", "virtron-beta.netlify.app"],
   credentials: true,
 };
 
