@@ -6,6 +6,11 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  codeName: {
+    type: String,
+    required: true,
+    unique: true,
+  },
   password: {
     type: String,
     required: true,
@@ -24,6 +29,10 @@ const userSchema = new mongoose.Schema({
       ref: 'Transaction',
     },
   ],
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 const User = mongoose.model('User', userSchema);
