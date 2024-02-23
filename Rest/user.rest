@@ -31,8 +31,8 @@ POST https://gaming-token-production.up.railway.app/api/v1/user/login
 Content-Type: application/json
 
 {
-    "userName": "wer",
-    "password": "1234"
+    "userName": "tt",
+    "password": "12345678"
 }
 
 ###
