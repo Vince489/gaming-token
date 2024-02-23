@@ -31,8 +31,8 @@ POST https://gaming-token-production.up.railway.app/api/v1/user/login
 Content-Type: application/json
 
 {
-    "userName": "waq",
-    "password": "12345678"
+    "userName": "wer",
+    "password": "1234"
 }
 
 ###
@@ -41,8 +41,8 @@ POST http://localhost:5550/api/v1/user/login
 Content-Type: application/json
 
 {
-    "userName": "waq",
-    "password": "12345678"
+    "userName": "wer",
+    "password": "1234"
 }
 
 ###
