@@ -33,7 +33,7 @@ const sessionOptions = {
     maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
     domain: process.env.NODE_ENV === 'production' ? 'virtronboxing.club' : undefined,
     secure: process.env.NODE_ENV === 'production', // set to true in production if using HTTPS
-    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+    sameSite: 'None' // set to 'None' in production if using HTTPS,
   }
 };
 
