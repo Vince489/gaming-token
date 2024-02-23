@@ -39,25 +39,6 @@ const sessionOptions = {
 
 router.use(session(sessionOptions));
 
-// Get auth data
-router.get('/getAuthData', async (req, res) => {
-  try {
-    const userId = req.session.userId;
-
-    // Find the authentication state document for the specified user
-    const authState = await AuthState.findOne({ userId });
-
-    if (!authState) {
-      return res.status(200).json({});
-    }
-
-    res.status(200).json(authState);
-  } catch (error) {
-    console.error('Error getting auth state:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
-
 // Get all users endpoint
 router.get('/', async (req, res) => {
   try {
@@ -143,7 +124,7 @@ router.post('/login', async (req, res) => {
       user: user, 
       isLoggedIn: true,
     });
-    console.log()
+    console.log('User logged in:', user.userName);
   } catch (error) {
     // Handle errors
     console.error(error);
